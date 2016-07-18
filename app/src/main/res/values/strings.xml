@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">Guardian News Feed</string>
+    <string name="heading_text">"Today's headlines"</string>
+    <string name="no_net">No network connection available</string>
+
+    <string-array name="content_sections">
+        <item>World</item>
+        <item>Politics</item>
+        <item>Business</item>
+        <item>Science</item>
+        <item>Technology</item>
+        <item>Sport</item>
+    </string-array>
+
+</resources>
