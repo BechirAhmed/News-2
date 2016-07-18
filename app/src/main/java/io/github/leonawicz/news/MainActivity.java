@@ -38,6 +38,7 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String DEBUG_TAG = "HttpExample";
     private ListView list;
+    private ArrayList<FeedArticle> feedArticles = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,8 +47,16 @@ public class MainActivity extends AppCompatActivity {
 
         final String currentDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
 
-        list = (ListView) findViewById(R.id.list);
         Spinner spinner = (Spinner) findViewById(R.id.sections_spinner);
+
+        list = (ListView) findViewById(R.id.list);
+        list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
+                FeedArticle article = feedArticles.get(position);
+                openWebPage(article.getUrl());
+            }
+        });
 
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
                 R.array.content_sections, R.layout.spinner);
@@ -84,47 +93,43 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private class DownloadJsonTask extends AsyncTask<String, Void, String> {
-
-        private ArrayList<FeedArticle> feedArticles = new ArrayList<>();
-
         @Override
         protected String doInBackground(String... urls) {
             try {
-                return downloadUrl(urls[0]);
-            } catch (IOException e) {
+                String result = downloadUrl(urls[0]);
+                FeedArticle feedArticle;
+                Log.v("result", result);
+                JSONObject jsonRoot = new JSONObject(result).optJSONObject("response");
+                JSONArray jsonArray = jsonRoot.optJSONArray("results");
+                for (int i = 0; i < jsonArray.length(); i++) {
+                    JSONObject jsonObj = jsonArray.getJSONObject(i);
+                    String author;
+                    try {
+                        author = jsonObj.optJSONArray("tags").
+                                getJSONObject(0).optString("webTitle");
+                    } catch (Exception e) {
+                        author = "";
+                    }
+                    feedArticle = new FeedArticle(
+                            jsonObj.optString("webTitle"),
+                            author,
+                            jsonObj.optString("webPublicationDate"),
+                            jsonObj.optString("webUrl"),
+                            jsonObj.optJSONObject("fields").optString("thumbnail"));
+                    feedArticles.add(feedArticle);
+                }
+                return result;
+            } catch (Exception e) {
                 return "Cannot download JSON data. Check your url.";
             }
         }
 
         @Override
         protected void onPostExecute(String result) {
-            FeedArticle feedArticle;
             try {
-                Log.v("result", result);
-                JSONObject jsonRoot = new JSONObject(result).optJSONObject("response");
-                JSONArray jsonArray = jsonRoot.optJSONArray("results");
-                for (int i = 0; i < jsonArray.length(); i++) {
-                    JSONObject jsonObj = jsonArray.getJSONObject(i);
-                    feedArticle = new FeedArticle(
-                            jsonObj.optString("webTitle"),
-                            jsonObj.optJSONArray("tags").getJSONObject(0).optString("webTitle"),
-                            jsonObj.optString("webPublicationDate"),
-                            jsonObj.optString("webUrl"),
-                            jsonObj.optJSONObject("fields").optString("thumbnail"));
-                    feedArticles.add(feedArticle);
-                }
-
                 FeedArticleAdapter adapter = new FeedArticleAdapter(MainActivity.this, feedArticles);
                 list.setAdapter(adapter);
-
-                list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                    @Override
-                    public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
-                        FeedArticle article = feedArticles.get(position);
-                        openWebPage(article.getUrl());
-                    }
-                });
-            } catch (JSONException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }

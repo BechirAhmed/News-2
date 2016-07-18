@@ -9,6 +9,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import java.util.ArrayList;
 
+import io.github.leonawicz.news.MainActivity;
 import io.github.leonawicz.news.R;
 
 public class FeedArticleAdapter extends ArrayAdapter<FeedArticle> {
